@@ -98,3 +98,49 @@ Do not add explanations outside the JSON.
         print("Gemini returned:")
         print(result)
         raise ValueError("Gemini returned invalid JSON")
+    try:
+        result = json.loads(result)
+
+    except json.JSONDecodeError:
+        print("Gemini returned:")
+        print(result)
+        raise ValueError("Gemini returned invalid JSON")
+
+    # Validate AI response
+    allowed_categories = {
+        "Road",
+        "Waste Management",
+        "Water",
+        "Electricity",
+        "Drainage",
+        "Public Safety",
+        "Other"
+    }
+
+    allowed_priorities = {
+        "Low",
+        "Medium",
+        "High",
+        "Urgent"
+    }
+
+    allowed_departments = {
+        "Road Department",
+        "Waste Management Department",
+        "Water Department",
+        "Electrical Department",
+        "Drainage Department",
+        "Public Safety Department",
+        "General Administration Department"
+    }
+
+    if result["category"] not in allowed_categories:
+        raise ValueError("Invalid category returned by AI")
+
+    if result["priority"] not in allowed_priorities:
+        raise ValueError("Invalid priority returned by AI")
+
+    if result["department"] not in allowed_departments:
+        raise ValueError("Invalid department returned by AI")
+
+    return result
