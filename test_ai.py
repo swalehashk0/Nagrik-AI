@@ -19,3 +19,4 @@ print("Summary:", result["summary"])
 
 print("Confidence:", result["confidence"])
 print("Urgency Reason:", result["urgency_reason"])
+print("Location:", result["location"])

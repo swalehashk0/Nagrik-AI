@@ -68,7 +68,8 @@ Choose the most suitable department from:
 - General Administration Department
 
 Also create a short, factual summary of the complaint.
-
+Also extract the location mentioned in the complaint.
+If no specific location is mentioned, return "Not specified".
 Also provide a confidence score between 0 and 1 representing your confidence
 in the overall classification.
 Also provide a short reason explaining why the selected priority
@@ -93,7 +94,8 @@ Return ONLY valid JSON in exactly this format:
     "department": "Waste Management Department",
     "summary": "Short summary here",
     "confidence": 0.94,
-    "urgency_reason": "Short reason for the selected priority"
+    "urgency_reason": "Short reason for the selected priority",
+    "location": "MG Road, Pune"
 }}
 
 The confidence value must be a number between 0 and 1.
@@ -139,7 +141,8 @@ Do not add explanations outside the JSON.
         "department",
         "summary",
         "confidence",
-        "urgency_reason"
+        "urgency_reason",
+        "location"
     }
 
     missing_fields = required_fields - result.keys()
