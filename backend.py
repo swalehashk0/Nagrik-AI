@@ -198,9 +198,29 @@ def update_status(complaint_id):
         "complaint_id": complaint_id,
         "status": status
     })
-    
+
+
+@app.route("/complaints/<int:complaint_id>/history", methods=["GET"])
+def get_complaint_history(complaint_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT id, complaint_id, status, note, updated_at
+        FROM complaint_updates
+        WHERE complaint_id = ?
+        ORDER BY updated_at ASC
+    """, (complaint_id,))
+
+    updates = cursor.fetchall()
+
+    conn.close()
+
+    return jsonify([
+        dict(update)
+        for update in updates
+    ])
+
 
 if __name__ == "__main__":
     app.run(debug=True)
-    
-   
