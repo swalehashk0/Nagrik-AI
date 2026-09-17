@@ -221,6 +221,40 @@ def get_complaint_history(complaint_id):
         for update in updates
     ])
 
+@app.route("/analytics", methods=["GET"])
+def get_analytics():
+    conn = get_db_connection()
+    cursor = conn.cursor()
 
+    cursor.execute("SELECT COUNT(*) AS total FROM complaints")
+    total = cursor.fetchone()["total"]
+
+    cursor.execute("""
+        SELECT status, COUNT(*) AS count
+        FROM complaints
+        GROUP BY status
+    """)
+    status_data = {
+        row["status"]: row["count"]
+        for row in cursor.fetchall()
+    }
+
+    cursor.execute("""
+        SELECT category, COUNT(*) AS count
+        FROM complaints
+        GROUP BY category
+    """)
+    category_data = {
+        row["category"]: row["count"]
+        for row in cursor.fetchall()
+    }
+
+    conn.close()
+
+    return jsonify({
+        "total_complaints": total,
+        "status_counts": status_data,
+        "category_counts": category_data
+    })
 if __name__ == "__main__":
     app.run(debug=True)
