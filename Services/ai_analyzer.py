@@ -70,6 +70,8 @@ Choose the most suitable department from:
 Also create a short, factual summary of the complaint.
 Also extract the location mentioned in the complaint.
 If no specific location is mentioned, return "Not specified".
+Also suggest one short, practical action that the responsible department
+could take to address this complaint.
 Also provide a confidence score between 0 and 1 representing your confidence
 in the overall classification.
 Also provide a short reason explaining why the selected priority
@@ -95,7 +97,8 @@ Return ONLY valid JSON in exactly this format:
     "summary": "Short summary here",
     "confidence": 0.94,
     "urgency_reason": "Short reason for the selected priority",
-    "location": "MG Road, Pune"
+    "location": "MG Road, Pune",
+    "suggested_action": "Short practical action here"
 }}
 
 The confidence value must be a number between 0 and 1.
@@ -142,7 +145,8 @@ Do not add explanations outside the JSON.
         "summary",
         "confidence",
         "urgency_reason",
-        "location"
+        "location",
+        "suggested_action",
     }
 
     missing_fields = required_fields - result.keys()
