@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from google import genai
 
 
-# Load the API key from .env
+# Load environment variables
 load_dotenv()
 
 api_key = os.getenv("GEMINI_API_KEY")
@@ -14,7 +14,7 @@ if not api_key:
     raise ValueError("GEMINI_API_KEY was not found in the .env file")
 
 
-# Create Gemini client
+# Initialize Gemini client
 client = genai.Client(api_key=api_key)
 
 
@@ -27,12 +27,16 @@ def analyze_complaint(complaint_text):
         priority
         department
         summary
+        confidence
     """
+
+    if not complaint_text or not complaint_text.strip():
+        raise ValueError("Complaint text cannot be empty")
 
     prompt = f"""
 You are an AI system that analyzes public complaints submitted by citizens.
 
-Analyze this complaint:
+Analyze the following complaint:
 
 "{complaint_text}"
 
@@ -63,7 +67,21 @@ Choose the most suitable department from:
 - Public Safety Department
 - General Administration Department
 
-Also create a short summary of the complaint.
+Also create a short, factual summary of the complaint.
+
+Also provide a confidence score between 0 and 1 representing your confidence
+in the overall classification.
+
+Confidence guidelines:
+
+- 0.90 to 1.00 = very clear complaint
+- 0.75 to 0.89 = reasonably clear complaint
+- 0.50 to 0.74 = somewhat ambiguous complaint
+- below 0.50 = highly ambiguous complaint
+
+Important:
+Confidence represents how certain the AI is about its classification.
+It does NOT represent the seriousness of the complaint.
 
 Return ONLY valid JSON in exactly this format:
 
@@ -71,19 +89,28 @@ Return ONLY valid JSON in exactly this format:
     "category": "Waste Management",
     "priority": "High",
     "department": "Waste Management Department",
-    "summary": "Short summary here"
+    "summary": "Short summary here",
+    "confidence": 0.94
 }}
+
+The confidence value must be a number between 0 and 1.
 
 Do not add markdown.
 Do not add explanations outside the JSON.
 """
 
-    response = client.models.generate_content(
-        model="gemini-3.6-flash",
-        contents=prompt
-    )
+    try:
+        response = client.models.generate_content(
+            model="gemini-3.5-flash-lite",
+            contents=prompt
+        )
 
-    result = response.text.strip()
+        result = response.text.strip()
+        
+
+    except Exception as e:
+        raise RuntimeError(f"AI analysis failed: {e}")
+
 
     # Remove markdown code fences if Gemini happens to return them
     if result.startswith("```"):
@@ -91,13 +118,8 @@ Do not add explanations outside the JSON.
         result = result.replace("```", "")
         result = result.strip()
 
-    try:
-        return json.loads(result)
 
-    except json.JSONDecodeError:
-        print("Gemini returned:")
-        print(result)
-        raise ValueError("Gemini returned invalid JSON")
+    # Convert JSON text into Python dictionary
     try:
         result = json.loads(result)
 
@@ -106,7 +128,25 @@ Do not add explanations outside the JSON.
         print(result)
         raise ValueError("Gemini returned invalid JSON")
 
-    # Validate AI response
+
+    # Validate required fields
+    required_fields = {
+        "category",
+        "priority",
+        "department",
+        "summary",
+        "confidence"
+    }
+
+    missing_fields = required_fields - result.keys()
+
+    if missing_fields:
+        raise ValueError(
+            f"AI response is missing required fields: {missing_fields}"
+        )
+
+
+    # Allowed categories
     allowed_categories = {
         "Road",
         "Waste Management",
@@ -117,6 +157,8 @@ Do not add explanations outside the JSON.
         "Other"
     }
 
+
+    # Allowed priorities
     allowed_priorities = {
         "Low",
         "Medium",
@@ -124,6 +166,8 @@ Do not add explanations outside the JSON.
         "Urgent"
     }
 
+
+    # Allowed departments
     allowed_departments = {
         "Road Department",
         "Waste Management Department",
@@ -134,13 +178,30 @@ Do not add explanations outside the JSON.
         "General Administration Department"
     }
 
+
+    # Validate category
     if result["category"] not in allowed_categories:
         raise ValueError("Invalid category returned by AI")
 
+
+    # Validate priority
     if result["priority"] not in allowed_priorities:
         raise ValueError("Invalid priority returned by AI")
 
+
+    # Validate department
     if result["department"] not in allowed_departments:
         raise ValueError("Invalid department returned by AI")
+
+
+    # Validate confidence score
+    confidence = result.get("confidence")
+
+    if not isinstance(confidence, (int, float)):
+        raise ValueError("Invalid confidence score returned by AI")
+
+    if not 0 <= confidence <= 1:
+        raise ValueError("Confidence score must be between 0 and 1")
+
 
     return result
