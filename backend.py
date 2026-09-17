@@ -82,6 +82,92 @@ def get_complaints():
         dict(complaint)
         for complaint in complaints
     ])
+    
+@app.route("/complaints/<int:complaint_id>", methods=["GET"])
+def get_complaint(complaint_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM complaints
+        WHERE id = ?
+    """, (complaint_id,))
+
+    complaint = cursor.fetchone()
+
+    conn.close()
+
+    if complaint is None:
+        return jsonify({
+            "error": "Complaint not found"
+        }), 404
+
+    return jsonify(dict(complaint))
+
+@app.route("/complaints/<int:complaint_id>/status", methods=["PUT"])
+def update_status(complaint_id):
+    data = request.get_json()
+
+    if not data or not data.get("status"):
+        return jsonify({
+            "error": "status is required"
+        }), 400
+
+    status = data.get("status")
+
+    allowed_statuses = {
+        "Pending",
+        "Assigned",
+        "In Progress",
+        "Resolved"
+    }
+
+    if status not in allowed_statuses:
+        return jsonify({
+            "error": "Invalid status"
+        }), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE complaints
+        SET status = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+    """, (status, complaint_id))
+
+    if cursor.rowcount == 0:
+        conn.close()
+        return jsonify({
+            "error": "Complaint not found"
+        }), 404
+
+    cursor.execute("""
+        INSERT INTO complaint_updates (
+            complaint_id,
+            status,
+            note
+        )
+        VALUES (?, ?, ?)
+    """, (
+        complaint_id,
+        status,
+        "Status updated by officer"
+    ))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({
+        "message": "Complaint status updated successfully",
+        "complaint_id": complaint_id,
+        "status": status
+    })
+    
 
 if __name__ == "__main__":
     app.run(debug=True)
+    
+   
