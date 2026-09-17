@@ -71,8 +71,6 @@ Also create a short, factual summary of the complaint.
 
 Also provide a confidence score between 0 and 1 representing your confidence
 in the overall classification.
-Also provide a short reason explaining why the selected priority
-level is appropriate for this complaint.
 
 Confidence guidelines:
 
@@ -92,8 +90,7 @@ Return ONLY valid JSON in exactly this format:
     "priority": "High",
     "department": "Waste Management Department",
     "summary": "Short summary here",
-    "confidence": 0.94,
-    "urgency_reason": "Short reason for the selected priority"
+    "confidence": 0.94
 }}
 
 The confidence value must be a number between 0 and 1.
@@ -138,8 +135,7 @@ Do not add explanations outside the JSON.
         "priority",
         "department",
         "summary",
-        "confidence",
-        "urgency_reason"
+        "confidence"
     }
 
     missing_fields = required_fields - result.keys()
