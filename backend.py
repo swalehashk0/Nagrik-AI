@@ -220,7 +220,27 @@ def get_complaint_history(complaint_id):
         dict(update)
         for update in updates
     ])
+@app.route("/escalations", methods=["GET"])
+def get_escalations():
+    conn = get_db_connection()
+    cursor = conn.cursor()
 
+    cursor.execute("""
+        SELECT *
+        FROM complaints
+        WHERE priority = 'Urgent'
+        AND status != 'Resolved'
+        ORDER BY created_at ASC
+    """)
+
+    complaints = cursor.fetchall()
+
+    conn.close()
+
+    return jsonify([
+        dict(complaint)
+        for complaint in complaints
+    ])
 @app.route("/analytics", methods=["GET"])
 def get_analytics():
     conn = get_db_connection()
