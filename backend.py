@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from database import get_db_connection
+from Services.ai_analyzer import analyze_complaint
 
 app = Flask(__name__)
 CORS(app)
@@ -37,6 +38,13 @@ def create_complaint():
             "error": "citizen_name and complaint_text are required"
         }), 400
 
+    try:
+        ai_result = analyze_complaint(complaint_text)
+    except Exception as e:
+        return jsonify({
+            "error": str(e)
+        }), 500
+
     conn = get_db_connection()
     cursor = conn.cursor()
 
@@ -44,13 +52,29 @@ def create_complaint():
         INSERT INTO complaints (
             citizen_name,
             citizen_email,
-            complaint_text
+            complaint_text,
+            category,
+            priority,
+            department,
+            summary,
+            confidence,
+            urgency_reason,
+            location,
+            suggested_action
         )
-        VALUES (?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         citizen_name,
         citizen_email,
-        complaint_text
+        complaint_text,
+        ai_result["category"],
+        ai_result["priority"],
+        ai_result["department"],
+        ai_result["summary"],
+        ai_result["confidence"],
+        ai_result["urgency_reason"],
+        ai_result["location"],
+        ai_result["suggested_action"]
     ))
 
     complaint_id = cursor.lastrowid
@@ -60,7 +84,16 @@ def create_complaint():
 
     return jsonify({
         "message": "Complaint submitted successfully",
-        "complaint_id": complaint_id
+        "complaint_id": complaint_id,
+        "category": ai_result["category"],
+        "priority": ai_result["priority"],
+        "department": ai_result["department"],
+        "summary": ai_result["summary"],
+        "confidence": ai_result["confidence"],
+        "urgency_reason": ai_result["urgency_reason"],
+        "location": ai_result["location"],
+        "suggested_action": ai_result["suggested_action"],
+        "status": "Pending"
     }), 201
     
 @app.route("/complaints", methods=["GET"])
