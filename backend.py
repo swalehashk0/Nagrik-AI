@@ -62,7 +62,26 @@ def create_complaint():
         "message": "Complaint submitted successfully",
         "complaint_id": complaint_id
     }), 201
+    
+@app.route("/complaints", methods=["GET"])
+def get_complaints():
+    conn = get_db_connection()
+    cursor = conn.cursor()
 
+    cursor.execute("""
+        SELECT *
+        FROM complaints
+        ORDER BY created_at DESC
+    """)
+
+    complaints = cursor.fetchall()
+
+    conn.close()
+
+    return jsonify([
+        dict(complaint)
+        for complaint in complaints
+    ])
 
 if __name__ == "__main__":
     app.run(debug=True)
