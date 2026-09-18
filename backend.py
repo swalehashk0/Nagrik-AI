@@ -1,9 +1,12 @@
 from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
-from database import get_db_connection
+from database import get_db_connection, create_database
 from Services.ai_analyzer import analyze_complaint
 
 app = Flask(__name__)
+
+create_database()
+
 CORS(app)
 
 @app.route("/")
