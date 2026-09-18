@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
 from database import get_db_connection
 from Services.ai_analyzer import analyze_complaint
@@ -8,9 +8,7 @@ CORS(app)
 
 @app.route("/")
 def home():
-    return jsonify({
-        "message": "Nagrik-AI Backend is running"
-    })
+    return render_template("index.html")
 
 
 @app.route("/health")
